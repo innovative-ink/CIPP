@@ -1,56 +1,47 @@
-name: CIPP Frontend Build
+name: Azure Static Web Apps CI/CD
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+      - master
 
 jobs:
-  build:
-    if: github.event.repository.fork == false
-    name: Build and Upload CIPP Frontend
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-
+    name: Build and Deploy Job
     steps:
-      # Checkout the repository
-      - name: Checkout Code
-        uses: actions/checkout@v4.2.2
-
-      # Set up Node.js
-      - name: Get Node version
-        id: get_node_version
-        run: |
-          node_raw_version=$(node -p "require('./package.json').engines.node")
-          node_sanitized_version=$(echo $node_raw_version | sed -E 's/[^0-9.]+//g')
-          echo "node_version=$node_sanitized_version" >> $GITHUB_OUTPUT
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4.2.0
+      - uses: actions/checkout@v2
         with:
-          node-version: ${{ steps.get_node_version.outputs.node_version }}
-
-      # Install dependencies
-      - name: Install Dependencies
-        run: yarn install
-
-      # Build the project
-      - name: Build Project
-        run: npm run build
-
-      # Create ZIP File in a New Source Directory
-      - name: Prepare and Zip Build Files
-        run: |
-          mkdir -p build
-          cp staticwebapp.config.json out/
-          zip -r build/latest.zip out
-
-      # Upload to Azure Blob Storage
-      - name: Azure Blob Upload
-        uses: LanceMcCarthy/Action-AzureBlobUpload@v3.3.1
+          submodules: true
+      - name: Build And Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          connection_string: ${{ secrets.AZURE_CONNECTION_STRING }}
-          container_name: cipp
-          source_folder: build/
-          destination_folder: /
-          delete_if_exists: true
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CHANGE_ME_047D97703 }} # change this to your repository secret name
+          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+          action: "upload"
+          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+          app_location: "/" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "/out" # Built app content directory - optional
+          ###### End of Repository/Build Configurations ######
+
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CHANGE_ME_047D97703 }} # change this to your repository secret name
+          action: "close"
