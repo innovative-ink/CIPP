@@ -14,7 +14,6 @@ const Page = () => {
   const settings = useSettings()
   const { currentTenant } = settings
   const router = useRouter()
-  // Only use default if router is ready and reportId is still not present
   const selectedReport =
     router.isReady && !router.query.reportId ? 'ztna' : router.query.reportId || 'ztna'
 
@@ -31,8 +30,7 @@ const Page = () => {
   })
   const reportDescription = reportsApi.data?.find((r) => r.id === selectedReport)?.description
 
-  const identityTests =
-    testsApi.data?.TestResults?.filter((test) => test.TestType === 'Identity') || []
+  const customTests = testsApi.data?.TestResults?.filter((test) => test.TestType === 'Custom') || []
 
   const offCanvas = {
     size: 'lg',
@@ -79,7 +77,7 @@ const Page = () => {
 
   return (
     <Container maxWidth={false}>
-      <CippHead title="Identity Tests" />
+      <CippHead title="Custom Tests" />
       <Box sx={{ mb: 2 }}>
         <CippReportToolbar />
       </Box>
@@ -89,9 +87,9 @@ const Page = () => {
         </Alert>
       )}
       <CippDataTable
-        title="Identity Tests"
-        data={identityTests}
-        simpleColumns={['Name', 'Risk', 'Status']}
+        title="Custom Tests"
+        data={customTests}
+        simpleColumns={['Name', 'Category', 'Risk', 'Status']}
         isFetching={testsApi.isFetching}
         offCanvas={offCanvas}
         offCanvasOnRowClick={true}
